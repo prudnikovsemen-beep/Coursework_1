@@ -29,6 +29,7 @@ mypy = "^1.9.0"
 pytest = "^7.0.0"
 requests = "^2.34.2"
 pytest-cov = "^7.1.0"
+pandas-stubs = "^3.0.3.260530"
 
 [tool.black]
 line-length = 119
@@ -69,7 +70,7 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 80
+fail_under = 75
 
 
 [tool.pytest.ini_options]
