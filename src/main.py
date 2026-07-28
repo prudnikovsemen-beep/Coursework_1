@@ -3,10 +3,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-import pandas as pd
-
 from src.utils import load_transactions
 from src.views import generate_home_page_json
+
 # Раскомментируй, если будешь использовать сервисы в CLI
 # from src.services import investment_bank, simple_search
 

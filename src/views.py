@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 import pandas as pd
 import requests
 
@@ -69,13 +70,16 @@ def generate_home_page_json(
             "stock_prices": fetch_stock_prices(settings.get("user_stocks", [])),
         }
 
+    # Делаем копию, чтобы не менять оригинал, и конвертируем даты: мусор станет NaT
+    df = df.copy()
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], errors="coerce")
+
     dt_range = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
     start_of_month = dt_range.replace(day=1, hour=0, minute=0, second=0)
 
     now = datetime.now()
     greeting = get_greeting(now.hour)
 
-    # ВАЖНО: везде используем строго "Дата операции" (без опечаток)
     mask = (df["Дата операции"] >= start_of_month) & (df["Дата операции"] <= dt_range)
     filtered = df.loc[mask].copy()
 
@@ -97,9 +101,16 @@ def generate_home_page_json(
     if not filtered.empty and "Сумма операции" in filtered.columns:
         top5 = filtered.nlargest(5, "Сумма операции")
         for _, row in top5.iterrows():
+            #  Обязательно добавь проверку на NaT, иначе strftime упадёт
+            date_val = row["Дата операции"]
+            if pd.isna(date_val):
+                date_str_out = "Неизвестна"
+            else:
+                date_str_out = date_val.strftime("%d.%m.%Y")
+
             top_transactions.append(
                 {
-                    "date": row["Дата операции"].strftime("%d.%m.%Y"),
+                    "date": date_str_out,
                     "amount": round(float(row["Сумма операции"]), 2),
                     "category": str(row.get("Категория", "")),
                     "description": str(row.get("Описание", "")),
