@@ -28,7 +28,7 @@ def load_transactions(file_path: Union[str, Path]) -> pd.DataFrame:
         return pd.DataFrame(columns=required_cols)
 
     try:
-        # <-- ключевое исправление: явно указываем движок для Excel
+        # Читаем Excel; openpyxl должен быть в зависимостях проекта
         df = pd.read_excel(file_path, engine="openpyxl")
     except Exception as e:
         logger.exception("Ошибка чтения Excel-файла: %s", e)
@@ -37,20 +37,22 @@ def load_transactions(file_path: Union[str, Path]) -> pd.DataFrame:
     # Проверяем наличие обязательных колонок
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        logger.warning("В файле отсутствуют обязательные колонки: %s. Данные будут неполными.", missing)
-        # Если нет нужных колонок — возвращаем пустой DF с правильными именами
+        logger.warning(
+            "В файле отсутствуют обязательные колонки: %s. Данные будут неполными.",
+            missing,
+        )
         return pd.DataFrame(columns=required_cols)
 
-    # Приводим дату
+    # Приводим дату: без жёсткого формата, чтобы парсились разные варианты
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], errors="coerce")
 
     # Приводим сумму к числу
     df["Сумма операции"] = pd.to_numeric(df["Сумма операции"], errors="coerce")
 
-    # Удаляем строки, где нет ни даты, ни суммы
-    df = df.dropna(subset=["Дата операции", "Сумма операции"], how="all")
+    # Удаляем строки, где нет даты ИЛИ нет суммы (достаточно одного NaN)
+    df = df.dropna(subset=["Дата операции", "Сумма операции"])
 
-    # Оставляем только нужные колонки (теперь безопасно, потому что мы уже проверили их наличие)
+    # Оставляем только нужные колонки
     df = df[required_cols]
 
     return df
